@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
 
+#include <list>
 #include <vector>
 
 using namespace std;
@@ -33,100 +32,60 @@ determinant(matrix m);
 matrix
 least_square(matrix x, matrix y);
 
-void
-matrix_print(matrix m);
-
-#define DIM 4
-#define NUM 4
+#define DIM 2
+#define NUM 30
 
 int main(void)
 {
   matrix x, y;
-
-  // {
-  //   matrix x, y;
-  //   double var[DIM][NUM] = {
-  //     {
-  // 	1, 2, -1, 1,
-  //     }, {
-  // 	-1, 0, 2, -2,
-  //     }, {
-  // 	3, -1, 1, 1,
-  //     }, {
-  // 	2, 0, -1, 2,
-  //     }
-  //   };
-
-  //   x.resize(NUM);
-  //   for (int i = 0; i < NUM; i++) {
-  //     x[i].resize(DIM);
-  //     for (int j = 0; j < DIM; j++) {
-  // 	x[i][j] = var[i][j];
-  //     }
-  //   }
-
-  //   printf("%g\n", determinant(x));
-  // return 0;
-  // }
-
-  FILE * fp = fopen("input.txt", "r");
-  if (fp == NULL) {
-    fprintf(stderr, "can't open \'input.txt\'\n");
-    return 1;
-  }
-  
-  char buffer[512];
-  while (fgets(buffer, 512, fp)) {
-    char *p;
-    vector<double> vars;
-    for (p = buffer; *p != '\0'; ) {
-      for (; *p != '\0' && !isdigit(*p); p++)
-  	;
-      if (*p != '\0') {
-  	double var = atof(p);
-  	vars.push_back(var);
-  	for (; *p != '\0' && (isdigit(*p) || *p == '.'); p++)
-  	  ;
-      }
+  double var[DIM][NUM] = {
+    {
+      1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1,
+    }, {
+      1, 2, 3, 4, 5,
+      6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15,
+      16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25,
+      26, 27, 28, 29, 30,
     }
-    
-    vector<double>::iterator it = vars.end() - 1;
-    double value_y = *it;
-    vars.erase(it);
-    x.push_back(vars);
-    vector<double> row_y;
-    row_y.push_back(value_y);
-    y.push_back(row_y);
-    if (vars.size() != x[0].size()) {
-      fprintf(stderr, "input dimensions inconsistent\n");
-      return 1;
+  };
+  double values[NUM] = {
+    33815, 33981, 34004, 34165, 34212,
+    34327, 34344, 34458, 34498, 34476,
+    34483, 34488, 34513, 34497, 34511,
+    34520, 34507, 34509, 34521, 34513,
+    34515, 34517, 34519, 34519, 34521,
+    34521, 34523, 34525, 34525, 34527
+  };
+
+  x.resize(NUM);
+  for (int i = 0; i < NUM; i++) {
+    x[i].resize(DIM);
+    for (int j = 0; j < DIM; j++) {
+      x[i][j] = var[j][i];
     }
   }
 
-  fclose(fp);
+  y.resize(30);
+  for (int i = 0; i < NUM; i++) {
+    y[i].resize(1);
+    y[i][0] = values[i];
+  }
 
-  // for (size_t i = 0; i < x.size(); i++) {
-  //   for (size_t j = 0; j < x[i].size(); j++)
-  //     fprintf(stderr, "%g\t", x[i][j]);
-  //   fprintf(stderr, "%g\n", y[i][0]);
-  // }
-  // fprintf(stderr, "\n%ld x %ld\n\n", x.size(), x[0].size());
-  
   matrix c = least_square(x, y);
 
-  //matrix_print(c);
+  for (size_t i = 0; i < c.size(); i++)
+    for (size_t j = 0; j < c[i].size(); j++)
+      printf("%f ", c[i][j]);
+  printf("\n");
   
   return 0;
-}
-
-void
-matrix_print(matrix m)
-{
-  for (size_t i = 0; i < m.size(); i++) {
-    for (size_t j = 0; j < m[i].size(); j++)
-      printf("%g\t", m[i][j]);
-    printf("\n");
-  }
 }
 
 matrix
@@ -186,7 +145,7 @@ companion_matrix(matrix m)
     for (size_t j = 0; j < t[i].size(); j++)
       t[i][j] = cofactor(m, i, j);
 
-  return matrix_transpose(t);
+  return t;
 }
 
 double
@@ -204,10 +163,18 @@ cofactor(matrix m, int row, int col)
   return (((row + col) % 2 == 0) ? 1 : -1) * determinant(m);
 }
 
+class job {
+  int row, col;
+  const matrix &m;
+
+  job(int row, int col, const matrix &m) {
+    this.row = row;
+};
+
 double
 determinant(matrix m)
 {
-  double result;
+  int result;
 
   if (m.size() != m[0].size()) {
     fprintf(stderr, "matrix (%ld, %ld) 's determinant not exist\n",
@@ -227,10 +194,13 @@ determinant(matrix m)
       - m[0][1] * m[1][0] * m[2][2]
       - m[0][2] * m[1][1] * m[2][0];
   else {
+    //parallel implementation
     result = 0;
-    for (size_t i = 0; i < m[0].size(); i++)
+
+    
+    for (size_t i = 0; i < m[i].size(); i++)
       if (m[0][i] != 0)
-	result += m[0][i] * cofactor(m, 0, i);
+    	result += m[0][i] * cofactor(m, 0, i);
   }
 
   return result;
@@ -239,9 +209,6 @@ determinant(matrix m)
 matrix
 inverse_matrix(matrix m)
 {
-  matrix_print(m);
-  printf("%g\n", determinant(m));
-  //matrix_print(matrix_divide(companion_matrix(m), determinant(m)));
   return matrix_divide(companion_matrix(m), determinant(m));
 }
 
@@ -249,7 +216,6 @@ matrix
 least_square(matrix x, matrix y)
 {
   matrix x_t = matrix_transpose(x);
-  //matrix_print(inverse_matrix(matrix_multiply(x_t, x)));
   return matrix_multiply(inverse_matrix(matrix_multiply(x_t, x)),
 			 matrix_multiply(x_t, y));
 }
