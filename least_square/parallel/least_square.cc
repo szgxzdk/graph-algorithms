@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 #include <pthread.h>
 
 #include <list>
@@ -7,7 +9,7 @@
 
 using namespace std;
 
-#define THREAD_NUM 4
+#define THREAD_NUM 2
 
 typedef vector<vector<double> > matrix;
 
@@ -48,60 +50,64 @@ least_square(matrix x, matrix y);
 void *
 thr_fun(void *arg);
 
-#define DIM 2
-#define NUM 30
+void
+matrix_print(matrix m);
 
-int main(void)
+int main(int argc, char **argv)
 {
   matrix x, y;
-  double var[DIM][NUM] = {
-    {
-      1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1,
-      1, 1, 1, 1, 1,
-    }, {
-      1, 2, 3, 4, 5,
-      6, 7, 8, 9, 10,
-      11, 12, 13, 14, 15,
-      16, 17, 18, 19, 20,
-      21, 22, 23, 24, 25,
-      26, 27, 28, 29, 30,
-    }
-  };
-  double values[NUM] = {
-    33815, 33981, 34004, 34165, 34212,
-    34327, 34344, 34458, 34498, 34476,
-    34483, 34488, 34513, 34497, 34511,
-    34520, 34507, 34509, 34521, 34513,
-    34515, 34517, 34519, 34519, 34521,
-    34521, 34523, 34525, 34525, 34527
-  };
 
-  x.resize(NUM);
-  for (int i = 0; i < NUM; i++) {
-    x[i].resize(DIM);
-    for (int j = 0; j < DIM; j++) {
-      x[i][j] = var[j][i];
+  FILE * fp = fopen(argv[1], "r");
+  if (fp == NULL) {
+    fprintf(stderr, "can't open \'%s\'\n", argv[1]);
+    return 1;
+  }
+  
+  char buffer[512];
+  while (fgets(buffer, 512, fp)) {
+    char *p;
+    vector<double> vars;
+    for (p = buffer; *p != '\0'; ) {
+      for (; *p != '\0' && !isdigit(*p); p++)
+  	;
+      if (*p != '\0') {
+  	double var = atof(p);
+  	vars.push_back(var);
+  	for (; *p != '\0' && (isdigit(*p) || *p == '.'); p++)
+  	  ;
+      }
+    }
+    
+    vector<double>::iterator it = vars.end() - 1;
+    double value_y = *it;
+    vars.erase(it);
+    x.push_back(vars);
+    vector<double> row_y;
+    row_y.push_back(value_y);
+    y.push_back(row_y);
+    if (vars.size() != x[0].size()) {
+      fprintf(stderr, "input dimensions inconsistent\n");
+      return 1;
     }
   }
 
-  y.resize(30);
-  for (int i = 0; i < NUM; i++) {
-    y[i].resize(1);
-    y[i][0] = values[i];
-  }
-
+  fclose(fp);
+  
   matrix c = least_square(x, y);
 
-  for (size_t i = 0; i < c.size(); i++)
-    for (size_t j = 0; j < c[i].size(); j++)
-      printf("%f ", c[i][j]);
-  printf("\n");
+  matrix_print(c);
   
   return 0;
+}
+
+void
+matrix_print(matrix m)
+{
+  for (size_t i = 0; i < m.size(); i++) {
+    for (size_t j = 0; j < m[i].size(); j++)
+      printf("%lf ", m[i][j]);
+    printf("\n");
+  }
 }
 
 matrix
@@ -161,7 +167,7 @@ companion_matrix(matrix m)
     for (size_t j = 0; j < t[i].size(); j++)
       t[i][j] = cofactor(m, i, j);
 
-  return t;
+  return matrix_transpose(t);
 }
 
 double
@@ -188,7 +194,7 @@ double
 determinant(matrix m)
 {
   static bool flag = false;
-  int result;
+  double result;
 
   if (m.size() != m[0].size()) {
     fprintf(stderr, "matrix (%ld, %ld) 's determinant not exist\n",
@@ -221,12 +227,15 @@ determinant(matrix m)
       pthread_create(&tids[i], NULL, thr_fun, NULL);
     for (int i = 0; i < THREAD_NUM; i++)
       pthread_join(tids[i], NULL);
-    
+
     for (size_t i = 0; i < results.size(); i++)
       result += results[i];
+    results.clear();
+        
+    flag = false;
   } else {
     result = 0;
-    for (size_t i = 0; i < m[i].size(); i++)
+    for (size_t i = 0; i < m[0].size(); i++)
       if (m[0][i] != 0)
 	result += m[0][i] * cofactor(m, 0, i);
   }

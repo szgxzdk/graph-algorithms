@@ -36,42 +36,13 @@ least_square(matrix x, matrix y);
 void
 matrix_print(matrix m);
 
-#define DIM 4
-#define NUM 4
-
-int main(void)
+int main(int argc, char **argv)
 {
   matrix x, y;
 
-  // {
-  //   matrix x, y;
-  //   double var[DIM][NUM] = {
-  //     {
-  // 	1, 2, -1, 1,
-  //     }, {
-  // 	-1, 0, 2, -2,
-  //     }, {
-  // 	3, -1, 1, 1,
-  //     }, {
-  // 	2, 0, -1, 2,
-  //     }
-  //   };
-
-  //   x.resize(NUM);
-  //   for (int i = 0; i < NUM; i++) {
-  //     x[i].resize(DIM);
-  //     for (int j = 0; j < DIM; j++) {
-  // 	x[i][j] = var[i][j];
-  //     }
-  //   }
-
-  //   printf("%g\n", determinant(x));
-  // return 0;
-  // }
-
-  FILE * fp = fopen("input.txt", "r");
+  FILE * fp = fopen(argv[1], "r");
   if (fp == NULL) {
-    fprintf(stderr, "can't open \'input.txt\'\n");
+    fprintf(stderr, "can't open \'%s\'\n", argv[1]);
     return 1;
   }
   
@@ -104,17 +75,10 @@ int main(void)
   }
 
   fclose(fp);
-
-  // for (size_t i = 0; i < x.size(); i++) {
-  //   for (size_t j = 0; j < x[i].size(); j++)
-  //     fprintf(stderr, "%g\t", x[i][j]);
-  //   fprintf(stderr, "%g\n", y[i][0]);
-  // }
-  // fprintf(stderr, "\n%ld x %ld\n\n", x.size(), x[0].size());
   
   matrix c = least_square(x, y);
 
-  //matrix_print(c);
+  matrix_print(c);
   
   return 0;
 }
@@ -124,7 +88,7 @@ matrix_print(matrix m)
 {
   for (size_t i = 0; i < m.size(); i++) {
     for (size_t j = 0; j < m[i].size(); j++)
-      printf("%g\t", m[i][j]);
+      printf("%lf ", m[i][j]);
     printf("\n");
   }
 }
@@ -239,9 +203,6 @@ determinant(matrix m)
 matrix
 inverse_matrix(matrix m)
 {
-  matrix_print(m);
-  printf("%g\n", determinant(m));
-  //matrix_print(matrix_divide(companion_matrix(m), determinant(m)));
   return matrix_divide(companion_matrix(m), determinant(m));
 }
 
@@ -249,7 +210,6 @@ matrix
 least_square(matrix x, matrix y)
 {
   matrix x_t = matrix_transpose(x);
-  //matrix_print(inverse_matrix(matrix_multiply(x_t, x)));
   return matrix_multiply(inverse_matrix(matrix_multiply(x_t, x)),
 			 matrix_multiply(x_t, y));
 }
