@@ -105,15 +105,17 @@ thr_fun(void * arg)
     right = vs->size();
   
   //local iterations
-  while (true) {
+  bool done = false;
+  while (!done) {
     double minw = INF;
     int prev, minwi;
+    bool all_in_s = true;
     for (size_t j = left; j < right; j++) {
       if (s[j] == true) {
 	const list<edge> & nbs = (*vs)[j].get_edges();
 	for (list<edge>::const_iterator it = nbs.begin();
 	     it != nbs.end();
-	     it++)
+	     it++) {
 	  if (s[it->dst] == false) {
 	    double w = minws[j] + it->weight;
 	    if (w < minw) {
@@ -122,6 +124,9 @@ thr_fun(void * arg)
 	      prev = j;
 	    }
 	  }
+	}
+      } else {
+	all_in_s = false;
       }
     }
 
@@ -129,6 +134,16 @@ thr_fun(void * arg)
     lminwi[id] = minwi;
     lprev[id] = prev;
 
+    if (all_in_s) 
+      done = true;
+
+    pthread_barrier_wait(&b1);
+    pthread_barrier_wait(&b2);
+  }
+
+  lminw[id] = INF;
+
+  while (true) {
     pthread_barrier_wait(&b1);
     pthread_barrier_wait(&b2);
   }

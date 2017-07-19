@@ -22,12 +22,12 @@ public:
 class vertex {
 private:
   double value;
-  bool visited = false;
+  bool visited;
   list<edge> edges;
   
 public:
-  vertex() {}
-  vertex(double value) { this->value = value; }
+  vertex() { this->visited = false; }
+  vertex(double value) { this->value = value; this->visited = false; }
 
   void set_visited() { this->visited = true; }
   void unset_visited() { this->visited = false; }
