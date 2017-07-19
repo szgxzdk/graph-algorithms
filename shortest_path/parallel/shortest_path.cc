@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <vector>
 #include <stack>
@@ -12,25 +13,30 @@ print_paths(int src, vector<int> paths);
 
 int main(int argc, char ** argv)
 {
-  if (argc != 2) {
-    fprintf(stderr, "usage: shortest_path_serial input_file\n");
+  if (argc != 3) {
+    fprintf(stderr, "usage: shortest_path_parallel thread_number input_file\n");
     return 1;
   }
 
-  FILE * fp = fopen(argv[1], "r");
+  FILE * fp = fopen(argv[2], "r");
   if (fp == NULL) {
-    fprintf(stderr, "can't open \'%s\'\n", argv[1]);
+    fprintf(stderr, "can't open \'%s\'\n", argv[2]);
     return 1;
   }
+
+  int tnum;
+  tnum = atoi(argv[1]);
 
   graph g;
   
-  int VNUM;
-  if (fscanf(fp, "%d\n", &VNUM) <= 0) {
+  int vnum;
+  if (fscanf(fp, "%d\n", &vnum) < 1) {
     fprintf(stderr, "no vertex number read\n");
     return 1;
   }
-  for (int i = 0; i < VNUM; i++)
+  if (tnum > vnum)
+    tnum = vnum;
+  for (int i = 0; i < vnum; i++)
     g.add_vertex(vertex());
   
   int src, dst;
@@ -41,7 +47,7 @@ int main(int argc, char ** argv)
       g.add_edge(dst, src, weight);
     }
 
-  vector<int> prevs = graph::single_src_sp(g, 0);
+  vector<int> prevs = graph::single_src_sp(g, 0, tnum);
 
   print_paths(0, prevs);
 

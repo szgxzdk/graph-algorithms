@@ -38,15 +38,37 @@ matrix_print(matrix m);
 
 int main(int argc, char **argv)
 {
-  matrix x, y;
-
+  if (argc != 2) {
+    fprintf(stderr, "usage: least_square_serial input_file\n");
+    return 1;
+  }
+  
   FILE * fp = fopen(argv[1], "r");
   if (fp == NULL) {
     fprintf(stderr, "can't open \'%s\'\n", argv[1]);
     return 1;
   }
+
+  matrix x, y;
   
   char buffer[512];
+
+  vector<double> paras;
+  {
+    fgets(buffer, 512, fp);
+    char *p;
+    for (p = buffer; *p != '\0'; ) {
+      for (; *p != '\0' && !isdigit(*p); p++)
+	;
+      if (*p != '\0') {
+	double var = atof(p);
+	paras.push_back(var);
+	for (; *p != '\0' && (isdigit(*p) || *p == '.'); p++)
+	  ;
+      }
+    }
+  }
+
   while (fgets(buffer, 512, fp)) {
     char *p;
     vector<double> vars;
@@ -75,8 +97,12 @@ int main(int argc, char **argv)
   }
 
   fclose(fp);
-  
+
   matrix c = least_square(x, y);
+
+  for (int i = 0; i < (int)paras.size(); i++)
+    printf("%g\n", paras[i]);
+  printf("\n");
 
   matrix_print(c);
   
